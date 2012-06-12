@@ -5,10 +5,11 @@ var async = require('utile').async,
 var DB = exports;
 
 var client = DB.client = new Client({accessKeyId : process.env.AWS_ACCEESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY});
-DB.TestTable = "TestTable";
+DB.TestTable = "test_dynode";
 
 DB.start = function(callback) {
-  // truncate collections
+  // make sure we delete our test table if it exists
+  DB.deleteTable(DB.TestTable, callback);
 };
 
 DB.createProducts = function(products, callback) {
@@ -44,7 +45,7 @@ DB.products = [
 DB.deleteTable = function(tableName, callback) {
   client.deleteTable(tableName, function(err, resp){
     var isDeleted = false;
-    
+
     async.until(
       function(){return isDeleted;},
       function(cb){
@@ -60,17 +61,25 @@ DB.deleteTable = function(tableName, callback) {
 DB.createTable = function(tableName, callback) {
   client.createTable(tableName, function(err, resp){
     var isActive = false;
-    
+    var tabl = undefined;
+    var error = undefined;
+
+    var finish = function () {
+      callback(error,tabl);
+    };
+
     async.until(
       function(){return isActive;},
       function(cb){
         client.describeTable(tableName, function(err, table) {
           if(!_.isNull(table) && table.TableStatus === "ACTIVE"){
             isActive= true;
+            tabl = table;
+            error = err;
           }
           setTimeout(cb, 1000);
         });
-      }, callback
+      }, finish
     );
   });
 

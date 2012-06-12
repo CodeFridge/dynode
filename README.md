@@ -9,7 +9,7 @@ node.js client for working with Amazon's [DynamoDB](http://docs.amazonwebservice
 ```
 
 ### Installing dynode
-``` bash 
+``` bash
   $ [sudo] npm install dynode
 ```
 ## Motivation
@@ -73,7 +73,7 @@ Before you can perform any operations on DynamoDB you need to provide your Amazo
 <a name="tableNamePrefix"></a>
 ## Table Name Prefix
 
-dynode client takes an optional tableNamePrefix in order to support running in different environments such as dev, testing, production  
+dynode client takes an optional tableNamePrefix in order to support running in different environments such as dev, testing, production
 
 ``` js
   var client = new (dynode.Client)({
@@ -123,7 +123,7 @@ By default `listTables` will list all of your DynamoDB tables.
   dynode.listTables(console.log);
 ```
 
-You can also pass in options to filter which tables to list. See [Amazon's docs][listTablesDocs] for more info 
+You can also pass in options to filter which tables to list. See [Amazon's docs][listTablesDocs] for more info
 
 ``` js
   dynode.listTables({Limit: 3, ExclusiveStartTableName: "ExampleTable"}, console.log);
@@ -132,7 +132,7 @@ You can also pass in options to filter which tables to list. See [Amazon's docs]
 <a name="describeTable"></a>
 ## Describe Table
 
-Returns information about the table, including the current status of the table, the primary key schema and when the table was created. 
+Returns information about the table, including the current status of the table, the primary key schema and when the table was created.
 For more info see [here][describeTableDocs]
 
 ``` js
@@ -365,6 +365,48 @@ All tests are written with [mocha][0] and should be run with make:
 
 ``` bash
   $ make test
+```
+
+# All Tests
+If you want to run all tests without having to type in your environment variables every time, then
+setup this bash script in the root of the project and populate the env variables as you need. This is
+just sloppy code to get the job done easy.
+
+```bash
+#!/bin/sh
+
+ACCESS="" # put your AWS access key here
+SECRET="" # put your AWS secret here
+FULL=""   # use 'true' if you want to delete and create the test table
+CREATE="" # use 'true' if you want to make sure that the test table is created
+
+if [ "$ACCESS" != "" ]
+then
+  if [ "$SECRET" != "" ]
+  then
+    if [ "$FULL" != "" ]
+    then
+      if [ "$CREATE" != "" ]
+      then
+        AWS_ACCEESS_KEY_ID=$ACCESS AWS_SECRET_ACCESS_KEY=$SECRET FULL_INTEGRATION=$FULL CREATE_TABLE=$CREATE make test-all
+      else
+        AWS_ACCEESS_KEY_ID=$ACCESS AWS_SECRET_ACCESS_KEY=$SECRET FULL_INTEGRATION=$FULL make test-all
+      fi
+    else
+      if [ "$CREATE" != "" ]
+      then
+        AWS_ACCEESS_KEY_ID=$ACCESS AWS_SECRET_ACCESS_KEY=$SECRET CREATE_TABLE=$CREATE make test-all
+      else
+        AWS_ACCEESS_KEY_ID=$ACCESS AWS_SECRET_ACCESS_KEY=$SECRET make test-all
+      fi
+    fi
+  else
+    echo "AWS_SECRET_ACCESS_KEY must be defined in this file"
+  fi
+else
+  echo "AWS_ACCESS_KEY_ID must be defined in this file"
+fi
+
 ```
 
 #### Author: [Ryan Fitzgerald](http://twitter.com/#!/TheRyanFitz)

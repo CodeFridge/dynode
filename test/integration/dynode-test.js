@@ -5,6 +5,27 @@ var dynode = require("../../lib/dynode"),
 
 describe('Dynode Integration Tests', function() {
 
+  before(function(done) {
+    // give creation and deletion a large timeout
+    this.timeout(60000);
+    // make sure our DB is started up properly
+    if (process.env.FULL_INTEGRATION != undefined) {
+      DynamoDB.start(done);
+    } else {
+      done();
+    }
+  });
+
+  after(function(done) {
+    // give creation and deletion a large timeout
+    this.timeout(60000);
+    if (process.env.FULL_INTEGRATION != undefined) {
+      DynamoDB.deleteTable(DynamoDB.TestTable, done);
+    } else {
+      done();
+    }
+  });
+
   beforeEach(function() {
     dynode.auth({accessKeyId : process.env.AWS_ACCEESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY});
   });
@@ -20,10 +41,25 @@ describe('Dynode Integration Tests', function() {
 
     });
 
+    it ('should create TestTable', function(done) {
+      // give creation and deletion a large timeout
+      this.timeout(60000);
+      if (process.env.FULL_INTEGRATION != undefined || process.env.CREATE_TABLE != undefined) {
+        DynamoDB.createTable(DynamoDB.TestTable, function(err, table) {
+          table.TableName.should.equal(DynamoDB.TestTable);
+          done();
+        });
+      } else {
+        // otherwise pass through
+        should.not.exist(undefined);
+        done()
+      }
+    });
+
     it('should describe table', function(done) {
-      
-      dynode.describeTable("TestTable", function(err, table) {
-        table.TableName.should.equal("TestTable");
+
+      dynode.describeTable(DynamoDB.TestTable, function(err, table) {
+        table.TableName.should.equal(DynamoDB.TestTable);
         done();
       });
 
@@ -34,24 +70,24 @@ describe('Dynode Integration Tests', function() {
   describe("Put Item", function() {
 
     it('should create new item', function(done) {
-      dynode.putItem("TestTable", {id : "Blah", foo: "Bar", num: 123, baz : ["a", "b", "c"]}, function(err, resp) {
+      dynode.putItem(DynamoDB.TestTable, {id : "Blah", foo: "Bar", num: 123, baz : ["a", "b", "c"]}, function(err, resp) {
         should.not.exist(err);
         done();
       });
     });
 
     it('should create item with unicode characters', function(done) {
-      dynode.putItem("TestTable", {id : "another", uni: "München"}, function(err, resp) {
+      dynode.putItem(DynamoDB.TestTable, {id : "another", uni: "München"}, function(err, resp) {
         should.not.exist(err);
         done(err);
       });
     });
 
     it('should create item without empty string attributes', function(done) {
-      dynode.putItem("TestTable", {id : "more", name :"", strings: [""], count: 0 }, function(err, resp) {
+      dynode.putItem(DynamoDB.TestTable, {id : "more", name :"", strings: [""], count: 0 }, function(err, resp) {
         should.not.exist(err);
 
-        dynode.getItem("TestTable", "more", {ConsistentRead : true}, function(err, item){
+        dynode.getItem(DynamoDB.TestTable, "more", {ConsistentRead : true}, function(err, item){
           should.not.exist(err);
           should.not.exist(item.name);
           should.not.exist(item.strings);
@@ -65,13 +101,13 @@ describe('Dynode Integration Tests', function() {
   });
 
   describe("Get Item", function() {
-    
+
     before(function(done) {
       DynamoDB.createProduct({id : "TestItem", foo: "Bar"}, done);
     });
 
     it('should get item', function(done) {
-      dynode.getItem("TestTable", "TestItem", function(err, item, meta) {
+      dynode.getItem(DynamoDB.TestTable, "TestItem", function(err, item, meta) {
         item.should.eql({id : "TestItem", foo: "Bar"});
         meta.ConsumedCapacityUnits.should.equal(0.5);
         done(err);
@@ -79,7 +115,7 @@ describe('Dynode Integration Tests', function() {
     });
 
     it('should return null for not found item', function(done) {
-      dynode.getItem("TestTable", "ThisKeyDoesntExist", function(err, item, meta) {
+      dynode.getItem(DynamoDB.TestTable, "ThisKeyDoesntExist", function(err, item, meta) {
         should.not.exist(err);
         should.not.exist(item);
         meta.ConsumedCapacityUnits.should.equal(0.5);
@@ -92,7 +128,7 @@ describe('Dynode Integration Tests', function() {
 
     before(function(done) {
       DynamoDB.createProducts([
-        {id: "updateTest", foo: "baz"}, 
+        {id: "updateTest", foo: "baz"},
         {id: "update2", nums: [1,2,3], age: 22},
         {id: "update3", foo: "bar", age: 22},
         {id: "update4", foo: "blah", age: 99, nums : [4,5,6], lname : 'tester'}
@@ -136,7 +172,7 @@ describe('Dynode Integration Tests', function() {
   });
 
   describe("Delete Item", function() {
-    
+
     beforeEach(function(done) {
       DynamoDB.createProduct({id : "DeleteMe", foo: "Bar"}, done);
     });
@@ -159,7 +195,7 @@ describe('Dynode Integration Tests', function() {
   });
 
   describe("Scan", function() {
-    
+
     before(function(done) {
       DynamoDB.createProducts(DynamoDB.products, done);
     });
@@ -186,7 +222,7 @@ describe('Dynode Integration Tests', function() {
   describe("Batch Write Item", function(){
     before(function(done) {
       DynamoDB.createProducts([
-        {id: "batch1", foo: "baz"}, 
+        {id: "batch1", foo: "baz"},
         {id: "batch2", nums: [1,2,3], age: 22},
         {id: "batch3", foo: "bar", age: 22},
         {id: "batch4", foo: "blah", age: 99, nums : [4,5,6], lname : 'tester'}
@@ -212,7 +248,7 @@ describe('Dynode Integration Tests', function() {
     before(function(done) {
       this.timeout(0);
       var products = [];
-      
+
       for(var i = 0; i <= 10; i++) {
         products.push({id: "prod-"+i, foo: "bar-" +i});
       }
@@ -237,7 +273,7 @@ describe('Dynode Integration Tests', function() {
   describe("Error Handling", function(){
 
     it("should return error for non existant table", function(done) {
-      
+
       dynode.describeTable("NonExistTable", function(err) {
         err.type.should.equal("ResourceNotFoundException");
 
@@ -252,7 +288,7 @@ describe('Dynode Integration Tests', function() {
     before(function(done){
       dynode.auth({
         https : true,
-        accessKeyId: process.env.AWS_ACCEESS_KEY_ID, 
+        accessKeyId: process.env.AWS_ACCEESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
       });
 

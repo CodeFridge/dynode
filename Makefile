@@ -5,7 +5,7 @@ UNITTESTFILES := $(shell find test/unit -name '*-test.js')
 INTEGRATIONTESTFILES := $(shell find test/integration -name '*-test.js')
 
 test: test-unit
-	
+
 test-all: test-unit test-integration
 
 test-unit:

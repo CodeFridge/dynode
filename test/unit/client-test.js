@@ -61,8 +61,8 @@ describe("DynamoDB Client unit tests", function(){
 
       client.describeTable("TestTable", done);
     });
-  });  
-  
+  });
+
   describe("List Tables", function() {
     it('should make request to list all tables', function(done) {
       client._request = function(action, options, cb) {
@@ -78,7 +78,7 @@ describe("DynamoDB Client unit tests", function(){
       client._request = function(action, options, cb) {
         action.should.equal("ListTables");
         options.should.eql({Limit: 4, ExclusiveStartTableName: "SomeTable"});
-        
+
         cb();
       };
 
@@ -136,10 +136,10 @@ describe("DynamoDB Client unit tests", function(){
       client._request = function(action, options, cb) {
         action.should.equal("PutItem");
         options.TableName.should.equal("TestTable");
-        
+
         options.Item.should.eql({
           id    : { N: '99' },
-          nums  : { NS: ['22', '33', '44']}, 
+          nums  : { NS: ['22', '33', '44']},
           terms : { SS: ["foo", "bar", "baz"]}
         });
 
@@ -157,7 +157,7 @@ describe("DynamoDB Client unit tests", function(){
         options.TableName.should.equal("TestTable");
         options.ReturnValues.should.equal("ALL_OLD");
         options.Item.should.eql({id: { S: 'blah' }});
-        
+
         cb();
       };
 
@@ -205,7 +205,7 @@ describe("DynamoDB Client unit tests", function(){
         action.should.equal("UpdateItem");
         options.TableName.should.equal("TestTable");
         options.Expected.should.eql({"foo":{"Value":{"S":"bar"}}});
-        
+
         cb(null, {ConsumedCapacityUnits: 1});
       };
 
@@ -215,8 +215,8 @@ describe("DynamoDB Client unit tests", function(){
     it('should parse returned Attributes to json', function(done) {
       var updates = {age : 22};
 
-      client._request = function(action, options, cb) {        
-        cb(null, {ConsumedCapacityUnits: 1, 
+      client._request = function(action, options, cb) {
+        cb(null, {ConsumedCapacityUnits: 1,
                   Attributes : {
                     name : {"S":"Bob"}, age : {"N":"22"}
                   }
@@ -226,8 +226,8 @@ describe("DynamoDB Client unit tests", function(){
       client.updateItem("TestTable", "somekey" , updates, function(err, meta){
         meta.Attributes.name.should.equal("Bob");
         meta.Attributes.age.should.equal(22);
-        
-        done();  
+
+        done();
       });
 
     });
@@ -305,7 +305,7 @@ describe("DynamoDB Client unit tests", function(){
     it("should return null when item for given key doesnt exist", function(done){
       client._request = function(action, options, cb) {
         action.should.equal("GetItem");
-        
+
         cb(null, {Item : {}});
       };
 
@@ -367,7 +367,7 @@ describe("DynamoDB Client unit tests", function(){
       };
 
       client.query("QueryTable", "my-key", done);
-    });    
+    });
 
     it("should convert returned items to json", function(done){
       client._request = function(action, options, cb) {
@@ -375,7 +375,7 @@ describe("DynamoDB Client unit tests", function(){
         options.TableName.should.eql("QueryTable");
         options.HashKeyValue.should.eql({"N":"12345"});
 
-        cb(null, 
+        cb(null,
           { ConsumedCapacityUnits: 0.5, Count: 2, Items:
             [ { name: { S: 'bday' }, accountID: { N: '12345' } },
               { name: { S: 'summer' }, accountID: { N: '12345' } } ] });
@@ -408,7 +408,7 @@ describe("DynamoDB Client unit tests", function(){
         options.TableName.should.eql("QueryTable");
         options.RangeKeyCondition.should.eql({"AttributeValueList":[{"N":"AttributeValue2"}],"ComparisonOperator":"GT"});
         options.Limit.should.equal(13);
-        
+
         cb(null, {});
       };
 
@@ -493,7 +493,7 @@ describe("DynamoDB Client unit tests", function(){
 
     it("should parse returned response to json", function(done){
       var response = {
-        Responses :{ 
+        Responses :{
           Table1 : {
             Items:[
               {"name": {"S":"Bob"},"Age": {"N":"22"} },
